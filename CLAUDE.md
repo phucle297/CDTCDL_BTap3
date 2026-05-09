@@ -1,69 +1,34 @@
-# Project Instructions for AI Agents
+# Project Orchestrator Rules
 
-This file provides instructions and context for AI coding agents working on this project.
+## Session Start
 
-<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
-## Beads Issue Tracker
+`~/.claude/scripts/session-start.sh`
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+## Task Management (AI only)
 
-### Quick Reference
+- Score first: `~/.claude/scripts/score-task.sh <bd-id>`
+- Claim: `bd update <id> --claim --json`
+- Pin to agent: `bd pin <id> --for agent-N --start`
+- Reserve files: `bd reserve <file> --for agent-N`
+- Close: `bd close <id> --json` (checkpoint-write.sh runs after)
+- Re-queue: `bd reopen <id>` → `bd pin <id> --for agent-N`
+- Never TodoWrite — bd only
 
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work
-bd close <id>         # Complete work
-```
+## Agent Communication
 
-### Rules
+- Assign: `bd pin <id> --for agent-N`
+- Signal done: `bd mail send orchestrator "done:<id>"`
+- Orchestrator reads: `bd mail inbox`
+- Conflict guard: `bd reserve <file>` before any multi-agent work
 
-- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
-- Run `bd prime` for detailed command reference and session close protocol
-- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+## Large Task Gate
 
-## Session Completion
+Before any task touching >5 files:
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+1. `score-task.sh <id>` → must output LARGE
+2. Create bd epic → phase subtasks
+3. Phase 0 commit required before Phase 1
 
-**MANDATORY WORKFLOW:**
+## Session End
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd dolt push
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-<!-- END BEADS INTEGRATION -->
-
-
-## Build & Test
-
-_Add your build and test commands here_
-
-```bash
-# Example:
-# npm install
-# npm test
-```
-
-## Architecture Overview
-
-_Add a brief overview of your project architecture_
-
-## Conventions & Patterns
-
-_Add your project-specific conventions here_
+`~/.claude/scripts/session-end.sh`
