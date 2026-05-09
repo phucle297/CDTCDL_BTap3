@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "CDTCDL_BTap3",
+  "project_id": "d5d9f2d4-e6e0-4d82-abca-d272b84d97ca"
+}
