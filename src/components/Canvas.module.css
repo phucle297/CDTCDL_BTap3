@@ -13,3 +13,18 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
 }
+
+.textEditTextarea {
+  width: 100%;
+  height: 100%;
+  font-weight: normal;
+  font-family: inherit;
+  border: 1px solid #4a90d9;
+  border-radius: 2px;
+  padding: 4px;
+  outline: none;
+  resize: none;
+  background: white;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
