@@ -1,7 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useDrawingStore } from '@/store/useDrawingStore';
 import { Canvas } from '../Canvas';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import type { RectShape, EllipseShape, LineShape, TextShape } from '@/types';
+
+function CanvasWithShortcuts() {
+  useKeyboardShortcuts();
+  return <Canvas />;
+}
 
 const makeRect = (overrides?: Partial<RectShape>): RectShape => ({
   id: 'rect-1',
@@ -35,7 +41,7 @@ describe('Canvas - US-022: Delete shape', () => {
   });
 
   it('pressing Delete key removes the selected shape', () => {
-    render(<Canvas />);
+    render(<CanvasWithShortcuts />);
 
     fireEvent.keyDown(document, { key: 'Delete' });
 
@@ -46,7 +52,7 @@ describe('Canvas - US-022: Delete shape', () => {
   });
 
   it('pressing Backspace key removes the selected shape', () => {
-    render(<Canvas />);
+    render(<CanvasWithShortcuts />);
 
     fireEvent.keyDown(document, { key: 'Backspace' });
 
@@ -61,7 +67,7 @@ describe('Canvas - US-022: Delete shape', () => {
       selectedIds: [],
       activeTool: 'select',
     });
-    render(<Canvas />);
+    render(<CanvasWithShortcuts />);
 
     fireEvent.keyDown(document, { key: 'Delete' });
 
@@ -70,7 +76,7 @@ describe('Canvas - US-022: Delete shape', () => {
   });
 
   it('clears selectedIds after deletion', () => {
-    render(<Canvas />);
+    render(<CanvasWithShortcuts />);
 
     fireEvent.keyDown(document, { key: 'Delete' });
 

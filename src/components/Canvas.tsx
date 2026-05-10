@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useDrawingStore } from "@/store/useDrawingStore";
 import type {
   RectShape,
@@ -11,6 +11,7 @@ import type {
   Shape,
 } from "@/types";
 import styles from "./Canvas.module.css";
+import { StatusBar } from "./StatusBar";
 
 interface DrawingState {
   isDrawing: boolean;
@@ -44,6 +45,8 @@ export function Canvas() {
   const deleteShape = useDrawingStore((state) => state.deleteShape);
   const setSelectedIds = useDrawingStore((state) => state.setSelectedIds);
   const clearSelection = useDrawingStore((state) => state.clearSelection);
+  const viewBox = useDrawingStore((state) => state.viewBox);
+  const setViewBox = useDrawingStore((state) => state.setViewBox);
 
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -65,38 +68,46 @@ export function Canvas() {
 
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [editingTextOriginal, setEditingTextOriginal] = useState<string>("");
+  const [mouseCoords, setMouseCoords] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
 
-  // US-022: Delete keyboard handler
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const cursorPixelX = e.clientX - rect.left;
+    const cursorPixelY = e.clientY - rect.top;
+    const cursorSvgX = viewBox.x + (cursorPixelX / rect.width) * viewBox.width;
+    const cursorSvgY = viewBox.y + (cursorPixelY / rect.height) * viewBox.height;
+
+    const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+    const newWidth = viewBox.width * zoomFactor;
+    const newHeight = viewBox.height * zoomFactor;
+    const newX = cursorSvgX - (cursorPixelX / rect.width) * newWidth;
+    const newY = cursorSvgY - (cursorPixelY / rect.height) * newHeight;
+    setViewBox({ x: newX, y: newY, width: newWidth, height: newHeight });
+  }, [viewBox, setViewBox]);
+
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "INPUT" ||
-        target.isContentEditable
-      )
-        return;
-      if (e.key === "Delete" || e.key === "Backspace") {
-        const state = useDrawingStore.getState();
-        if (state.selectedIds.length > 0) {
-          deleteShape(state.selectedIds[0]);
-          clearSelection();
-        }
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [deleteShape, clearSelection]);
+    const svg = svgRef.current;
+    if (!svg) return;
+    svg.addEventListener('wheel', handleWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
 
   function getMousePosition(e: React.MouseEvent) {
     const svg = svgRef.current;
     if (!svg) return { x: e.clientX, y: e.clientY };
     const rect = svg.getBoundingClientRect();
+    const pixelX = e.clientX - rect.left;
+    const pixelY = e.clientY - rect.top;
+    if (rect.width === 0 || rect.height === 0) {
+      return { x: pixelX, y: pixelY };
+    }
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: viewBox.x + (pixelX / rect.width) * viewBox.width,
+      y: viewBox.y + (pixelY / rect.height) * viewBox.height,
     };
   }
 
@@ -286,6 +297,8 @@ export function Canvas() {
   }
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
+    const pos = getMousePosition(e);
+    setMouseCoords({ x: pos.x, y: pos.y });
     if (activeTool === "select") {
       handleSelectMouseMove(e);
     } else {
@@ -548,34 +561,39 @@ export function Canvas() {
 
   return (
     <div data-testid="canvas-wrapper" className={styles.wrapper}>
-      <svg
-        ref={svgRef}
-        data-testid="svg-canvas"
-        viewBox="0 0 800 600"
-        width="800"
-        height="600"
-        className={styles.canvas}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-      >
-        <rect
-          x="0"
-          y="0"
+      <div className={styles.canvasContainer}>
+        <svg
+          ref={svgRef}
+          data-testid="svg-canvas"
+          viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
+          preserveAspectRatio="none"
           width="800"
           height="600"
-          fill="white"
-          data-background="true"
-          onMouseDown={
-            activeTool === "select" ? handleBackgroundMouseDown : undefined
-          }
-        />
-        {shapes.map(renderShape)}
-        {shapes
-          .filter((s) => selectedIds.includes(s.id))
-          .map(renderSelectionIndicator)}
-        {renderPreview()}
-      </svg>
+          className={styles.canvas}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={() => setMouseCoords({ x: null, y: null })}
+        >
+          <rect
+            x="0"
+            y="0"
+            width="800"
+            height="600"
+            fill="white"
+            data-background="true"
+            onMouseDown={
+              activeTool === "select" ? handleBackgroundMouseDown : undefined
+            }
+          />
+          {shapes.map(renderShape)}
+          {shapes
+            .filter((s) => selectedIds.includes(s.id))
+            .map(renderSelectionIndicator)}
+          {renderPreview()}
+        </svg>
+        <StatusBar x={mouseCoords.x} y={mouseCoords.y} />
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { useDrawingStore } from '@/store/useDrawingStore';
 import { exportSVG } from '@/utils/exportSVG';
 import { importSVG } from '@/utils/importSVG';
+import { calculateZoomToFit } from '@/utils/zoomToFit';
 import type { ToolType } from '@/types';
 import styles from './Toolbar.module.css';
 
@@ -20,6 +21,11 @@ export function Toolbar() {
   const setActiveTool = useDrawingStore((state) => state.setActiveTool);
   const shapes = useDrawingStore((state) => state.shapes);
   const loadShapes = useDrawingStore((state) => state.loadShapes);
+  const historyStack = useDrawingStore((state) => state.historyStack);
+  const futureStack = useDrawingStore((state) => state.futureStack);
+  const undo = useDrawingStore((state) => state.undo);
+  const redo = useDrawingStore((state) => state.redo);
+  const setViewBox = useDrawingStore((state) => state.setViewBox);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileOpen = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +102,29 @@ export function Toolbar() {
         className={styles.toolButton}
       >
         Open
+      </button>
+      <button
+        aria-label="Undo"
+        onClick={undo}
+        disabled={historyStack.length === 0}
+        className={styles.toolButton}
+      >
+        Undo
+      </button>
+      <button
+        aria-label="Redo"
+        onClick={redo}
+        disabled={futureStack.length === 0}
+        className={styles.toolButton}
+      >
+        Redo
+      </button>
+      <button
+        aria-label="Fit"
+        onClick={() => setViewBox(calculateZoomToFit(shapes, 800, 600, 20))}
+        className={styles.toolButton}
+      >
+        Fit
       </button>
     </div>
   );
