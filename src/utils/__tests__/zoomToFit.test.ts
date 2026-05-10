@@ -49,10 +49,7 @@ describe('calculateZoomToFit', () => {
   });
 
   it('covers all shapes bounding box', () => {
-    const shapes = [
-      makeRect(10, 10, 50, 50),
-      makeRect(200, 300, 100, 80),
-    ];
+    const shapes = [makeRect(10, 10, 50, 50), makeRect(200, 300, 100, 80)];
     const result = calculateZoomToFit(shapes, 800, 600, 20);
     // Content with padding: (-10..320, -10..400)
     expect(result.x).toBeLessThanOrEqual(-10);

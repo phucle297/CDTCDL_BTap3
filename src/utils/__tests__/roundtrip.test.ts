@@ -110,19 +110,39 @@ describe('SVG round-trip (export → import)', () => {
   it('preserves all shapes in a mixed canvas through round-trip', () => {
     const shapes: Shape[] = [
       {
-        id: 'r1', type: 'rect', x: 10, y: 20, width: 100, height: 50,
+        id: 'r1',
+        type: 'rect',
+        x: 10,
+        y: 20,
+        width: 100,
+        height: 50,
         style: { fill: '#ff0000', stroke: '#000000', strokeWidth: 2, opacity: 0.8 },
       },
       {
-        id: 'e1', type: 'ellipse', cx: 150, cy: 100, rx: 80, ry: 40,
+        id: 'e1',
+        type: 'ellipse',
+        cx: 150,
+        cy: 100,
+        rx: 80,
+        ry: 40,
         style: { fill: '#00ff00', stroke: '#333333', strokeWidth: 1, opacity: 1 },
       },
       {
-        id: 'l1', type: 'line', x1: 0, y1: 0, x2: 200, y2: 150,
+        id: 'l1',
+        type: 'line',
+        x1: 0,
+        y1: 0,
+        x2: 200,
+        y2: 150,
         style: { fill: 'none', stroke: '#0000ff', strokeWidth: 3, opacity: 1 },
       },
       {
-        id: 't1', type: 'text', x: 50, y: 80, content: 'Test', fontSize: 16,
+        id: 't1',
+        type: 'text',
+        x: 50,
+        y: 80,
+        content: 'Test',
+        fontSize: 16,
         style: { fill: '#000000', stroke: 'none', strokeWidth: 0, opacity: 1 },
       },
     ];
@@ -131,7 +151,7 @@ describe('SVG round-trip (export → import)', () => {
     const imported = importSVG(svgString);
 
     expect(imported).toHaveLength(4);
-    expect(imported.map(s => s.type)).toEqual(['rect', 'ellipse', 'line', 'text']);
+    expect(imported.map((s) => s.type)).toEqual(['rect', 'ellipse', 'line', 'text']);
   });
 
   it('round-trip of empty canvas produces empty array', () => {

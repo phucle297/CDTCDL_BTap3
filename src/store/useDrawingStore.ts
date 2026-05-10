@@ -26,6 +26,7 @@ interface DrawingState {
   clearSelection: () => void;
   setDefaultProperties: (props: Partial<ShapeStyle>) => void;
   loadShapes: (shapes: Shape[]) => void;
+  commitHistory: () => void;
   undo: () => void;
   redo: () => void;
   setViewBox: (viewBox: ViewBox) => void;
@@ -54,13 +55,11 @@ export const useDrawingStore = create<DrawingState>()((set) => ({
   updateShape: (id, updates) =>
     set((state) => ({
       shapes: state.shapes.map((s) => (s.id === id ? ({ ...s, ...updates } as Shape) : s)),
-      historyStack: pushHistory(state.historyStack, state.shapes),
-      futureStack: [],
     })),
   deleteShape: (id) =>
     set((state) => ({
       shapes: state.shapes.filter((s) => s.id !== id),
-      selectedIds: state.selectedIds.filter((sid) => sid !== id),
+      selectedIds: [],
       historyStack: pushHistory(state.historyStack, state.shapes),
       futureStack: [],
     })),
@@ -69,9 +68,14 @@ export const useDrawingStore = create<DrawingState>()((set) => ({
   setDefaultProperties: (props) =>
     set((state) => ({ defaultProperties: { ...state.defaultProperties, ...props } })),
   loadShapes: (shapes) =>
-    set((state) => ({
+    set(() => ({
       shapes,
       selectedIds: [],
+      historyStack: [],
+      futureStack: [],
+    })),
+  commitHistory: () =>
+    set((state) => ({
       historyStack: pushHistory(state.historyStack, state.shapes),
       futureStack: [],
     })),

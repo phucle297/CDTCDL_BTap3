@@ -68,8 +68,8 @@ export function calculateZoomToFit(
     }
   }
 
-  const contentW = (maxX - minX) + 2 * padding;
-  const contentH = (maxY - minY) + 2 * padding;
+  const contentW = maxX - minX + 2 * padding;
+  const contentH = maxY - minY + 2 * padding;
   const canvasRatio = canvasWidth / canvasHeight;
   const contentRatio = contentW / contentH;
 

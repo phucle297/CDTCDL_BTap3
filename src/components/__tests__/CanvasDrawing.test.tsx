@@ -24,7 +24,7 @@ function mockSvgBoundingRect(svg: Element) {
 function dragOnCanvas(
   svg: Element,
   start: { clientX: number; clientY: number },
-  end: { clientX: number; clientY: number },
+  end: { clientX: number; clientY: number }
 ) {
   fireEvent.mouseDown(svg, start);
   fireEvent.mouseMove(svg, end);

@@ -12,12 +12,24 @@ export function useKeyboardShortcuts() {
       // Tool shortcuts (no modifiers)
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         switch (e.key) {
-          case 'v': useDrawingStore.getState().setActiveTool('select'); return;
-          case 'r': useDrawingStore.getState().setActiveTool('rect'); return;
-          case 'e': useDrawingStore.getState().setActiveTool('ellipse'); return;
-          case 'l': useDrawingStore.getState().setActiveTool('line'); return;
-          case 't': useDrawingStore.getState().setActiveTool('text'); return;
-          case 'Escape': useDrawingStore.getState().clearSelection(); return;
+          case 'v':
+            useDrawingStore.getState().setActiveTool('select');
+            return;
+          case 'r':
+            useDrawingStore.getState().setActiveTool('rect');
+            return;
+          case 'e':
+            useDrawingStore.getState().setActiveTool('ellipse');
+            return;
+          case 'l':
+            useDrawingStore.getState().setActiveTool('line');
+            return;
+          case 't':
+            useDrawingStore.getState().setActiveTool('text');
+            return;
+          case 'Escape':
+            useDrawingStore.getState().clearSelection();
+            return;
           case 'Delete':
           case 'Backspace': {
             const state = useDrawingStore.getState();
@@ -67,7 +79,9 @@ export function useKeyboardShortcuts() {
             const cy = vb.y + vb.height / 2;
             const nw = vb.width * factor;
             const nh = vb.height * factor;
-            useDrawingStore.getState().setViewBox({ x: cx - nw / 2, y: cy - nh / 2, width: nw, height: nh });
+            useDrawingStore
+              .getState()
+              .setViewBox({ x: cx - nw / 2, y: cy - nh / 2, width: nw, height: nh });
             return;
           }
           case '-': {
@@ -78,7 +92,9 @@ export function useKeyboardShortcuts() {
             const cy = vb.y + vb.height / 2;
             const nw = vb.width * factor;
             const nh = vb.height * factor;
-            useDrawingStore.getState().setViewBox({ x: cx - nw / 2, y: cy - nh / 2, width: nw, height: nh });
+            useDrawingStore
+              .getState()
+              .setViewBox({ x: cx - nw / 2, y: cy - nh / 2, width: nw, height: nh });
             return;
           }
         }

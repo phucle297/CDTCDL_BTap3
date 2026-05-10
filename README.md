@@ -30,28 +30,28 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
+| Command             | Description              |
+| ------------------- | ------------------------ |
+| `npm run dev`       | Start development server |
+| `npm run build`     | Production build         |
 | `npm run typecheck` | TypeScript type checking |
-| `npm test` | Run test suite |
-| `npm run lint` | Lint with oxlint |
+| `npm test`          | Run test suite           |
+| `npm run lint`      | Lint with oxlint         |
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| V | Select tool |
-| R | Rectangle tool |
-| E | Ellipse tool |
-| L | Line tool |
-| T | Text tool |
-| Delete / Backspace | Delete selected shape |
-| Ctrl+Z | Undo |
-| Ctrl+Shift+Z / Ctrl+Y | Redo |
-| Ctrl+S | Save as SVG |
-| Escape | Deselect all |
+| Key                   | Action                |
+| --------------------- | --------------------- |
+| V                     | Select tool           |
+| R                     | Rectangle tool        |
+| E                     | Ellipse tool          |
+| L                     | Line tool             |
+| T                     | Text tool             |
+| Delete / Backspace    | Delete selected shape |
+| Ctrl+Z                | Undo                  |
+| Ctrl+Shift+Z / Ctrl+Y | Redo                  |
+| Ctrl+S                | Save as SVG           |
+| Escape                | Deselect all          |
 
 ## Tech Stack
 

@@ -74,7 +74,7 @@ describe('Canvas', () => {
         style.includes('background') ||
           style.includes('white') ||
           svg.querySelector('rect[fill="white"]') !== null ||
-          typeof bgClass === 'string',
+          typeof bgClass === 'string'
       ).toBe(true);
     });
   });
@@ -162,7 +162,9 @@ describe('Canvas', () => {
 
     it('applies style properties to shapes', () => {
       useDrawingStore.setState({
-        shapes: [makeRect({ style: { fill: '#ff0000', stroke: '#00ff00', strokeWidth: 3, opacity: 0.5 } })],
+        shapes: [
+          makeRect({ style: { fill: '#ff0000', stroke: '#00ff00', strokeWidth: 3, opacity: 0.5 } }),
+        ],
       });
       render(<Canvas />);
       const svg = screen.getByTestId('svg-canvas');

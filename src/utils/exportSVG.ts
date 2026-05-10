@@ -1,9 +1,30 @@
 import type { Shape } from '@/types';
 
-function styleAttrs(style: { fill?: string; stroke?: string; strokeWidth?: number; opacity?: number }): string {
+function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+const COLOR_PATTERN =
+  /^(#[0-9a-fA-F]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*[\d.]+\s*\)|hsl\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*\)|hsla\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*,\s*[\d.]+\s*\)|[a-zA-Z]+)$/;
+
+function sanitizeColor(value: string): string {
+  return COLOR_PATTERN.test(value.trim()) ? value.trim() : 'none';
+}
+
+function styleAttrs(style: {
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+}): string {
   const parts: string[] = [];
-  if (style.fill !== undefined) parts.push(`fill="${style.fill}"`);
-  if (style.stroke !== undefined) parts.push(`stroke="${style.stroke}"`);
+  if (style.fill !== undefined) parts.push(`fill="${sanitizeColor(style.fill)}"`);
+  if (style.stroke !== undefined) parts.push(`stroke="${sanitizeColor(style.stroke)}"`);
   if (style.strokeWidth !== undefined) parts.push(`stroke-width="${style.strokeWidth}"`);
   if (style.opacity !== undefined) parts.push(`opacity="${style.opacity}"`);
   return parts.join(' ');
@@ -25,7 +46,7 @@ function shapeToSVG(shape: Shape): string {
       if (shape.fontSize !== undefined) extras.push(`font-size="${shape.fontSize}"`);
       if (shape.fontFamily !== undefined) extras.push(`font-family="${shape.fontFamily}"`);
       const e = extras.length ? ' ' + extras.join(' ') : '';
-      return `<text x="${shape.x}" y="${shape.y}"${e}${s}>${shape.content}</text>`;
+      return `<text x="${shape.x}" y="${shape.y}"${e}${s}>${escapeXml(shape.content)}</text>`;
     }
     default:
       return '';

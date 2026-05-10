@@ -1,5 +1,31 @@
 import type { Shape, RectShape, EllipseShape, LineShape, TextShape, ShapeStyle } from '@/types';
 
+const ALLOWED_ELEMENTS = new Set(['rect', 'ellipse', 'circle', 'line', 'text', 'g', 'svg', 'path']);
+
+function stripUnsafeNodes(root: Document): void {
+  const all = root.querySelectorAll('*');
+  for (const el of all) {
+    if (!ALLOWED_ELEMENTS.has(el.tagName.toLowerCase())) {
+      el.remove();
+      continue;
+    }
+    const attrs = [...el.attributes];
+    for (const a of attrs) {
+      if (a.name.toLowerCase().startsWith('on')) {
+        el.removeAttribute(a.name);
+      }
+    }
+  }
+}
+
+function clampNum(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function sanitizeFontFamily(value: string): string {
+  return value.replace(/[^a-zA-Z0-9\s,-]/g, '');
+}
+
 function parseStyle(el: Element): ShapeStyle {
   const style: ShapeStyle = {};
   const fill = el.getAttribute('fill');
@@ -7,15 +33,17 @@ function parseStyle(el: Element): ShapeStyle {
   const stroke = el.getAttribute('stroke');
   if (stroke !== null) style.stroke = stroke;
   const sw = el.getAttribute('stroke-width');
-  if (sw !== null) style.strokeWidth = parseFloat(sw);
+  if (sw !== null) style.strokeWidth = clampNum(parseFloat(sw), 0, 100);
   const op = el.getAttribute('opacity');
-  if (op !== null) style.opacity = parseFloat(op);
+  if (op !== null) style.opacity = clampNum(parseFloat(op), 0, 1);
   return style;
 }
 
 function attr(el: Element, name: string, fallback = 0): number {
   const v = el.getAttribute(name);
-  return v !== null ? parseFloat(v) : fallback;
+  if (v === null) return fallback;
+  const n = parseFloat(v);
+  return clampNum(isNaN(n) ? fallback : n, -100000, 100000);
 }
 
 export function importSVG(svgString: string): Shape[] {
@@ -26,6 +54,8 @@ export function importSVG(svgString: string): Shape[] {
   if (errorNode) {
     throw new Error(`Invalid SVG: ${errorNode.textContent}`);
   }
+
+  stripUnsafeNodes(doc);
 
   const shapes: Shape[] = [];
   const supported = ['rect', 'ellipse', 'line', 'text'] as const;
@@ -48,9 +78,9 @@ export function importSVG(svgString: string): Shape[] {
             style,
           };
           const rx = el.getAttribute('rx');
-          if (rx !== null) shape.rx = parseFloat(rx);
+          if (rx !== null) shape.rx = clampNum(parseFloat(rx), -100000, 100000);
           const ry = el.getAttribute('ry');
-          if (ry !== null) shape.ry = parseFloat(ry);
+          if (ry !== null) shape.ry = clampNum(parseFloat(ry), -100000, 100000);
           shapes.push(shape);
           break;
         }
@@ -90,9 +120,9 @@ export function importSVG(svgString: string): Shape[] {
             style,
           };
           const fontSize = el.getAttribute('font-size');
-          if (fontSize !== null) shape.fontSize = parseFloat(fontSize);
+          if (fontSize !== null) shape.fontSize = clampNum(parseFloat(fontSize), 0, 100000);
           const fontFamily = el.getAttribute('font-family');
-          if (fontFamily !== null) shape.fontFamily = fontFamily;
+          if (fontFamily !== null) shape.fontFamily = sanitizeFontFamily(fontFamily);
           shapes.push(shape);
           break;
         }

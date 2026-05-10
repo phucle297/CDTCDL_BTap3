@@ -32,17 +32,17 @@ export function Toolbar() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.addEventListener('load', () => {
       try {
         const parsed = importSVG(reader.result as string);
         loadShapes(parsed);
       } catch (err) {
         window.alert(`Failed to open SVG: ${err instanceof Error ? err.message : err}`);
       }
-    };
-    reader.onerror = () => {
+    });
+    reader.addEventListener('error', () => {
       window.alert('Failed to read file.');
-    };
+    });
     reader.readAsText(file);
     e.target.value = '';
   };
@@ -59,10 +59,7 @@ export function Toolbar() {
   };
 
   return (
-    <div
-      role="toolbar"
-      className={styles.toolbar}
-    >
+    <div role="toolbar" className={styles.toolbar}>
       {TOOLS.map(({ label, tool }) => (
         <button
           key={tool}
@@ -74,11 +71,7 @@ export function Toolbar() {
           {label}
         </button>
       ))}
-      <button
-        aria-label="Save SVG"
-        onClick={handleSave}
-        className={styles.toolButton}
-      >
+      <button aria-label="Save SVG" onClick={handleSave} className={styles.toolButton}>
         Save
       </button>
       <input

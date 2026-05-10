@@ -92,13 +92,21 @@ describe('Undo/Redo', () => {
     expect(state.historyStack).toEqual([]);
   });
 
-  it('updateShape pushes to historyStack', () => {
+  it('updateShape does not push history (requires explicit commitHistory)', () => {
     const { addShape } = useDrawingStore.getState();
     addShape(makeRect('r1'));
     useDrawingStore.getState().updateShape('r1', { x: 999 });
     const state = useDrawingStore.getState();
-    expect(state.historyStack).toHaveLength(2);
+    expect(state.historyStack).toHaveLength(1);
     expect((state.shapes[0] as RectShape).x).toBe(999);
+  });
+
+  it('commitHistory snapshots current shapes', () => {
+    const { addShape } = useDrawingStore.getState();
+    addShape(makeRect('r1'));
+    useDrawingStore.getState().commitHistory();
+    const state = useDrawingStore.getState();
+    expect(state.historyStack).toHaveLength(2);
   });
 
   it('deleteShape pushes to historyStack', () => {
@@ -110,12 +118,13 @@ describe('Undo/Redo', () => {
     expect(state.shapes).toHaveLength(0);
   });
 
-  it('loadShapes pushes to historyStack', () => {
+  it('loadShapes resets history stacks', () => {
     const { addShape } = useDrawingStore.getState();
     addShape(makeRect('r1'));
     useDrawingStore.getState().loadShapes([makeRect('new1'), makeRect('new2')]);
     const state = useDrawingStore.getState();
-    expect(state.historyStack).toHaveLength(2);
+    expect(state.historyStack).toHaveLength(0);
+    expect(state.futureStack).toHaveLength(0);
     expect(state.shapes).toHaveLength(2);
   });
 });

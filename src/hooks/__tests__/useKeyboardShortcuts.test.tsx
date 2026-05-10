@@ -116,15 +116,17 @@ describe('useKeyboardShortcuts', () => {
 
   it('Delete deletes selected shape', () => {
     useDrawingStore.setState({
-      shapes: [{
-        id: 'r1',
-        type: 'rect',
-        x: 0,
-        y: 0,
-        width: 10,
-        height: 10,
-        style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
-      }],
+      shapes: [
+        {
+          id: 'r1',
+          type: 'rect',
+          x: 0,
+          y: 0,
+          width: 10,
+          height: 10,
+          style: { fill: 'none', stroke: '#000', strokeWidth: 1, opacity: 1 },
+        },
+      ],
       selectedIds: ['r1'],
     });
     render(<TestComponent />);

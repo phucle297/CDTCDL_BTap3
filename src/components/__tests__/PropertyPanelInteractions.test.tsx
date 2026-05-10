@@ -134,7 +134,9 @@ describe('PropertyPanel - US-034: Default properties', () => {
     fireEvent.change(fillInput, { target: { value: '#0000ff' } });
 
     const state = useDrawingStore.getState();
-    expect((state as { defaultProperties: { fill: string } }).defaultProperties.fill).toBe('#0000ff');
+    expect((state as { defaultProperties: { fill: string } }).defaultProperties.fill).toBe(
+      '#0000ff'
+    );
   });
 });
 

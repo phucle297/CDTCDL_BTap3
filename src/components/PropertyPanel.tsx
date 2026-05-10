@@ -13,9 +13,8 @@ export function PropertyPanel() {
   const clearSelection = useDrawingStore((state) => state.clearSelection);
   const setDefaultProperties = useDrawingStore((state) => state.setDefaultProperties);
 
-  const selectedShape = selectedIds.length > 0
-    ? shapes.find((s) => s.id === selectedIds[0])
-    : undefined;
+  const selectedShape =
+    selectedIds.length > 0 ? shapes.find((s) => s.id === selectedIds[0]) : undefined;
 
   const isTextShape = selectedShape?.type === 'text';
   const hasSelection = selectedShape !== undefined;
@@ -37,24 +36,33 @@ export function PropertyPanel() {
   };
 
   const handleStrokeWidthChange = (value: string) => {
+    const num = Number(value);
+    if (!isFinite(num) || num < 0) return;
+    const clamped = Math.min(100, num);
     if (selectedShape) {
-      updateShape(selectedShape.id, { style: { ...selectedShape.style, strokeWidth: Number(value) } });
+      updateShape(selectedShape.id, { style: { ...selectedShape.style, strokeWidth: clamped } });
     } else {
-      setDefaultProperties({ strokeWidth: Number(value) });
+      setDefaultProperties({ strokeWidth: clamped });
     }
   };
 
   const handleOpacityChange = (value: string) => {
+    const num = Number(value);
+    if (!isFinite(num) || num < 0) return;
+    const clamped = Math.max(0, Math.min(1, num));
     if (selectedShape) {
-      updateShape(selectedShape.id, { style: { ...selectedShape.style, opacity: Number(value) } });
+      updateShape(selectedShape.id, { style: { ...selectedShape.style, opacity: clamped } });
     } else {
-      setDefaultProperties({ opacity: Number(value) });
+      setDefaultProperties({ opacity: clamped });
     }
   };
 
   const handleFontSizeChange = (value: string) => {
+    const num = Number(value);
+    if (!isFinite(num) || num < 0) return;
+    const clamped = Math.max(1, Math.min(500, num));
     if (selectedShape && isTextShape) {
-      updateShape(selectedShape.id, { fontSize: Number(value) });
+      updateShape(selectedShape.id, { fontSize: clamped });
     }
   };
 
@@ -81,30 +89,21 @@ export function PropertyPanel() {
     ? (selectedShape.style.opacity ?? 1)
     : (defaultProperties?.opacity ?? 1);
 
-  const fontSizeValue = isTextShape
-    ? ((selectedShape as TextShape).fontSize ?? 16)
-    : 16;
+  const fontSizeValue = isTextShape ? ((selectedShape as TextShape).fontSize ?? 16) : 16;
 
   return (
-    <div
-      data-testid="property-panel"
-      className={styles.panel}
-    >
-      {!hasSelection && (
-        <p className={styles.noSelection}>
-          No Selection
-        </p>
-      )}
+    <div data-testid="property-panel" className={styles.panel}>
+      {!hasSelection && <p className={styles.noSelection}>No Selection</p>}
       {hasSelection && (
         <div>
           <h2 className={styles.heading}>Properties</h2>
-          <p className={styles.shapeType}>
-            {selectedShape.type}
-          </p>
+          <p className={styles.shapeType}>{selectedShape.type}</p>
         </div>
       )}
       <div className={styles.field}>
-        <label htmlFor="fill-color" className={styles.label}>Fill Color</label>
+        <label htmlFor="fill-color" className={styles.label}>
+          Fill Color
+        </label>
         <input
           id="fill-color"
           type="color"
@@ -115,7 +114,9 @@ export function PropertyPanel() {
         />
       </div>
       <div className={styles.field}>
-        <label htmlFor="stroke-color" className={styles.label}>Stroke Color</label>
+        <label htmlFor="stroke-color" className={styles.label}>
+          Stroke Color
+        </label>
         <input
           id="stroke-color"
           type="color"
@@ -126,7 +127,9 @@ export function PropertyPanel() {
         />
       </div>
       <div className={styles.field}>
-        <label htmlFor="stroke-width" className={styles.label}>Stroke Width</label>
+        <label htmlFor="stroke-width" className={styles.label}>
+          Stroke Width
+        </label>
         <input
           id="stroke-width"
           type="number"
@@ -138,7 +141,9 @@ export function PropertyPanel() {
         />
       </div>
       <div className={styles.field}>
-        <label htmlFor="opacity" className={styles.label}>Opacity</label>
+        <label htmlFor="opacity" className={styles.label}>
+          Opacity
+        </label>
         <input
           id="opacity"
           type="number"
@@ -153,7 +158,9 @@ export function PropertyPanel() {
       </div>
       {isTextShape && (
         <div className={styles.field}>
-          <label htmlFor="font-size" className={styles.label}>Font Size</label>
+          <label htmlFor="font-size" className={styles.label}>
+            Font Size
+          </label>
           <input
             id="font-size"
             type="number"
@@ -167,11 +174,7 @@ export function PropertyPanel() {
       )}
       {hasSelection && (
         <div className={styles.field}>
-          <button
-            aria-label="Delete"
-            onClick={handleDelete}
-            className={styles.deleteButton}
-          >
+          <button aria-label="Delete" onClick={handleDelete} className={styles.deleteButton}>
             Delete
           </button>
         </div>

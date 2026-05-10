@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { useDrawingStore } from '@/store/useDrawingStore';
 import { Canvas } from '../Canvas';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import type { RectShape, EllipseShape, LineShape, TextShape } from '@/types';
+import type { RectShape, EllipseShape } from '@/types';
 
 function CanvasWithShortcuts() {
   useKeyboardShortcuts();

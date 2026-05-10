@@ -88,9 +88,7 @@ describe('importSVG', () => {
   });
 
   it('converts stroke-width to strokeWidth (camelCase mapping)', () => {
-    const svg = svgWrap(
-      '<rect x="0" y="0" width="50" height="50" stroke-width="5" />'
-    );
+    const svg = svgWrap('<rect x="0" y="0" width="50" height="50" stroke-width="5" />');
     const shapes = importSVG(svg);
     expect(shapes[0].style.strokeWidth).toBe(5);
   });
@@ -148,9 +146,9 @@ describe('importSVG', () => {
   it('parses multiple shapes of different types', () => {
     const svg = svgWrap(
       '<rect x="0" y="0" width="100" height="100" fill="red" />' +
-      '<ellipse cx="200" cy="200" rx="50" ry="30" />' +
-      '<line x1="0" y1="0" x2="300" y2="300" stroke="blue" />' +
-      '<text x="10" y="10" font-size="16">Test</text>'
+        '<ellipse cx="200" cy="200" rx="50" ry="30" />' +
+        '<line x1="0" y1="0" x2="300" y2="300" stroke="blue" />' +
+        '<text x="10" y="10" font-size="16">Test</text>'
     );
     const shapes = importSVG(svg);
 

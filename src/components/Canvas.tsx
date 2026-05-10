@@ -1,17 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useDrawingStore } from "@/store/useDrawingStore";
-import type {
-  RectShape,
-  CircleShape,
-  EllipseShape,
-  LineShape,
-  TextShape,
-  Shape,
-} from "@/types";
-import styles from "./Canvas.module.css";
-import { StatusBar } from "./StatusBar";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useDrawingStore } from '@/store/useDrawingStore';
+import type { RectShape, CircleShape, EllipseShape, LineShape, TextShape, Shape } from '@/types';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, MIN_ZOOM_WIDTH, MAX_ZOOM_WIDTH } from '@/constants';
+import styles from './Canvas.module.css';
+import { StatusBar } from './StatusBar';
 
 interface DrawingState {
   isDrawing: boolean;
@@ -30,8 +24,8 @@ interface DragState {
 }
 
 const DEFAULT_STYLE = {
-  fill: "none",
-  stroke: "#000000",
+  fill: 'none',
+  stroke: '#000000',
   strokeWidth: 2,
   opacity: 1,
 };
@@ -42,13 +36,15 @@ export function Canvas() {
   const activeTool = useDrawingStore((state) => state.activeTool);
   const addShape = useDrawingStore((state) => state.addShape);
   const updateShape = useDrawingStore((state) => state.updateShape);
-  const deleteShape = useDrawingStore((state) => state.deleteShape);
   const setSelectedIds = useDrawingStore((state) => state.setSelectedIds);
   const clearSelection = useDrawingStore((state) => state.clearSelection);
   const viewBox = useDrawingStore((state) => state.viewBox);
   const setViewBox = useDrawingStore((state) => state.setViewBox);
+  const commitHistory = useDrawingStore((state) => state.commitHistory);
 
   const svgRef = useRef<SVGSVGElement>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const mouseCoordsRef = useRef({ x: 0, y: 0 });
 
   const [drawing, setDrawing] = useState<DrawingState>({
     isDrawing: false,
@@ -60,34 +56,46 @@ export function Canvas() {
 
   const [drag, setDrag] = useState<DragState>({
     isDragging: false,
-    shapeId: "",
+    shapeId: '',
     startX: 0,
     startY: 0,
     originalShape: null,
   });
 
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
-  const [editingTextOriginal, setEditingTextOriginal] = useState<string>("");
-  const [mouseCoords, setMouseCoords] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
+  const [editingTextOriginal, setEditingTextOriginal] = useState<string>('');
+  const [mouseCoords, setMouseCoords] = useState<{ x: number | null; y: number | null }>({
+    x: null,
+    y: null,
+  });
 
-  const handleWheel = useCallback((e: WheelEvent) => {
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    const svg = svgRef.current;
-    if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    const cursorPixelX = e.clientX - rect.left;
-    const cursorPixelY = e.clientY - rect.top;
-    const cursorSvgX = viewBox.x + (cursorPixelX / rect.width) * viewBox.width;
-    const cursorSvgY = viewBox.y + (cursorPixelY / rect.height) * viewBox.height;
+  const handleWheel = useCallback(
+    (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const cursorPixelX = e.clientX - rect.left;
+      const cursorPixelY = e.clientY - rect.top;
+      const cursorSvgX = viewBox.x + (cursorPixelX / rect.width) * viewBox.width;
+      const cursorSvgY = viewBox.y + (cursorPixelY / rect.height) * viewBox.height;
 
-    const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
-    const newWidth = viewBox.width * zoomFactor;
-    const newHeight = viewBox.height * zoomFactor;
-    const newX = cursorSvgX - (cursorPixelX / rect.width) * newWidth;
-    const newY = cursorSvgY - (cursorPixelY / rect.height) * newHeight;
-    setViewBox({ x: newX, y: newY, width: newWidth, height: newHeight });
-  }, [viewBox, setViewBox]);
+      const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+      const newWidth = Math.max(
+        MIN_ZOOM_WIDTH,
+        Math.min(MAX_ZOOM_WIDTH, viewBox.width * zoomFactor)
+      );
+      const newHeight = Math.max(
+        MIN_ZOOM_WIDTH * 0.75,
+        Math.min(MAX_ZOOM_WIDTH * 0.75, viewBox.height * zoomFactor)
+      );
+      const newX = cursorSvgX - (cursorPixelX / rect.width) * newWidth;
+      const newY = cursorSvgY - (cursorPixelY / rect.height) * newHeight;
+      setViewBox({ x: newX, y: newY, width: newWidth, height: newHeight });
+    },
+    [viewBox, setViewBox]
+  );
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -114,13 +122,14 @@ export function Canvas() {
   // --- Select mode handlers ---
 
   function handleShapeMouseDown(e: React.MouseEvent, shapeId: string) {
-    if (activeTool !== "select") return;
+    if (activeTool !== 'select') return;
     e.stopPropagation();
 
     const { x, y } = getMousePosition(e);
     const currentShapes = useDrawingStore.getState().shapes;
     const shape = currentShapes.find((s) => s.id === shapeId) ?? null;
 
+    commitHistory();
     setSelectedIds([shapeId]);
     setDrag({
       isDragging: true,
@@ -132,17 +141,17 @@ export function Canvas() {
   }
 
   function handleShapeDoubleClick(e: React.MouseEvent, shapeId: string) {
-    if (activeTool !== "select") return;
+    if (activeTool !== 'select') return;
     const currentShapes = useDrawingStore.getState().shapes;
     const shape = currentShapes.find((s) => s.id === shapeId);
-    if (!shape || shape.type !== "text") return;
+    if (!shape || shape.type !== 'text') return;
     const textShape = shape as TextShape;
     setEditingTextId(shapeId);
     setEditingTextOriginal(textShape.content);
   }
 
-  function handleBackgroundMouseDown(e: React.MouseEvent) {
-    if (activeTool !== "select") return;
+  function handleBackgroundMouseDown(_e: React.MouseEvent) {
+    if (activeTool !== 'select') return;
     clearSelection();
   }
 
@@ -153,13 +162,13 @@ export function Canvas() {
     const dy = y - drag.startY;
     const orig = drag.originalShape;
 
-    if (orig.type === "rect") {
+    if (orig.type === 'rect') {
       const s = orig as RectShape;
       updateShape(drag.shapeId, { x: s.x + dx, y: s.y + dy });
-    } else if (orig.type === "ellipse") {
+    } else if (orig.type === 'ellipse') {
       const s = orig as EllipseShape;
       updateShape(drag.shapeId, { cx: s.cx + dx, cy: s.cy + dy });
-    } else if (orig.type === "line") {
+    } else if (orig.type === 'line') {
       const s = orig as LineShape;
       updateShape(drag.shapeId, {
         x1: s.x1 + dx,
@@ -167,17 +176,17 @@ export function Canvas() {
         x2: s.x2 + dx,
         y2: s.y2 + dy,
       });
-    } else if (orig.type === "text") {
+    } else if (orig.type === 'text') {
       const s = orig as TextShape;
       updateShape(drag.shapeId, { x: s.x + dx, y: s.y + dy });
     }
   }
 
-  function handleSelectMouseUp(e: React.MouseEvent<SVGSVGElement>) {
+  function handleSelectMouseUp(_e: React.MouseEvent<SVGSVGElement>) {
     if (drag.isDragging) {
       setDrag({
         isDragging: false,
-        shapeId: "",
+        shapeId: '',
         startX: 0,
         startY: 0,
         originalShape: null,
@@ -188,7 +197,7 @@ export function Canvas() {
   // --- Drawing mode handlers ---
 
   function handleDrawMouseDown(e: React.MouseEvent<SVGSVGElement>) {
-    if (!["rect", "ellipse", "line", "text"].includes(activeTool)) return;
+    if (!['rect', 'ellipse', 'line', 'text'].includes(activeTool)) return;
     const { x, y } = getMousePosition(e);
     setDrawing({
       isDrawing: true,
@@ -220,20 +229,20 @@ export function Canvas() {
       currentY: 0,
     });
 
-    if (activeTool === "text") {
+    if (activeTool === 'text') {
       addShape({
         id: crypto.randomUUID(),
-        type: "text",
+        type: 'text',
         x: startX,
         y: startY,
-        content: "Text",
+        content: 'Text',
         fontSize: 16,
-        style: { ...DEFAULT_STYLE, fill: "#000000", strokeWidth: 1 },
+        style: { ...DEFAULT_STYLE, fill: '#000000', strokeWidth: 1 },
       } as TextShape);
       return;
     }
 
-    if (activeTool === "rect") {
+    if (activeTool === 'rect') {
       const rx = Math.min(startX, currentX);
       const ry = Math.min(startY, currentY);
       const rw = Math.abs(currentX - startX);
@@ -241,7 +250,7 @@ export function Canvas() {
       if (rw === 0 && rh === 0) return;
       addShape({
         id: crypto.randomUUID(),
-        type: "rect",
+        type: 'rect',
         x: rx,
         y: ry,
         width: rw,
@@ -251,7 +260,7 @@ export function Canvas() {
       return;
     }
 
-    if (activeTool === "ellipse") {
+    if (activeTool === 'ellipse') {
       const rx = Math.abs(currentX - startX) / 2;
       const ry = Math.abs(currentY - startY) / 2;
       if (rx === 0 && ry === 0) return;
@@ -259,7 +268,7 @@ export function Canvas() {
       const cy = (startY + currentY) / 2;
       addShape({
         id: crypto.randomUUID(),
-        type: "ellipse",
+        type: 'ellipse',
         cx,
         cy,
         rx,
@@ -269,11 +278,11 @@ export function Canvas() {
       return;
     }
 
-    if (activeTool === "line") {
+    if (activeTool === 'line') {
       if (startX === currentX && startY === currentY) return;
       addShape({
         id: crypto.randomUUID(),
-        type: "line",
+        type: 'line',
         x1: startX,
         y1: startY,
         x2: currentX,
@@ -286,7 +295,7 @@ export function Canvas() {
   // --- Unified SVG event handlers ---
 
   function handleMouseDown(e: React.MouseEvent<SVGSVGElement>) {
-    if (activeTool === "select") {
+    if (activeTool === 'select') {
       // Background click handled by background element's own handler
       // Shape clicks handled by shape element handlers (with stopPropagation)
       // If we reach here in select mode, it's a background click
@@ -298,8 +307,14 @@ export function Canvas() {
 
   function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
     const pos = getMousePosition(e);
-    setMouseCoords({ x: pos.x, y: pos.y });
-    if (activeTool === "select") {
+    mouseCoordsRef.current = { x: pos.x, y: pos.y };
+    if (!rafIdRef.current) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        setMouseCoords(mouseCoordsRef.current);
+        rafIdRef.current = null;
+      });
+    }
+    if (activeTool === 'select') {
       handleSelectMouseMove(e);
     } else {
       handleDrawMouseMove(e);
@@ -307,7 +322,7 @@ export function Canvas() {
   }
 
   function handleMouseUp(e: React.MouseEvent<SVGSVGElement>) {
-    if (activeTool === "select") {
+    if (activeTool === 'select') {
       handleSelectMouseUp(e);
     } else {
       handleDrawMouseUp(e);
@@ -318,15 +333,15 @@ export function Canvas() {
 
   function renderSelectionIndicator(shape: Shape) {
     const baseStyle = {
-      fill: "none" as const,
-      stroke: "blue",
-      strokeDasharray: "4",
+      fill: 'none' as const,
+      stroke: 'blue',
+      strokeDasharray: '4',
       strokeWidth: 1,
-      pointerEvents: "none" as const,
+      pointerEvents: 'none' as const,
     };
 
     switch (shape.type) {
-      case "rect": {
+      case 'rect': {
         const s = shape as RectShape;
         return (
           <rect
@@ -340,7 +355,7 @@ export function Canvas() {
           />
         );
       }
-      case "ellipse": {
+      case 'ellipse': {
         const s = shape as EllipseShape;
         return (
           <rect
@@ -354,7 +369,7 @@ export function Canvas() {
           />
         );
       }
-      case "line": {
+      case 'line': {
         const s = shape as LineShape;
         const minX = Math.min(s.x1, s.x2);
         const minY = Math.min(s.y1, s.y2);
@@ -372,7 +387,7 @@ export function Canvas() {
           />
         );
       }
-      case "text": {
+      case 'text': {
         const s = shape as TextShape;
         const fs = s.fontSize ?? 16;
         return (
@@ -395,7 +410,7 @@ export function Canvas() {
   function renderShape(shape: Shape) {
     const { id, style } = shape;
     const common = {
-      "data-shape-id": id,
+      'data-shape-id': id,
       fill: style.fill,
       stroke: style.stroke,
       strokeWidth: style.strokeWidth,
@@ -405,43 +420,23 @@ export function Canvas() {
     };
 
     switch (shape.type) {
-      case "rect": {
+      case 'rect': {
         const s = shape as RectShape;
-        return (
-          <rect
-            key={id}
-            {...common}
-            x={s.x}
-            y={s.y}
-            width={s.width}
-            height={s.height}
-          />
-        );
+        return <rect key={id} {...common} x={s.x} y={s.y} width={s.width} height={s.height} />;
       }
-      case "circle": {
+      case 'circle': {
         const s = shape as CircleShape;
         return <circle key={id} {...common} cx={s.cx} cy={s.cy} r={s.r} />;
       }
-      case "ellipse": {
+      case 'ellipse': {
         const s = shape as EllipseShape;
-        return (
-          <ellipse
-            key={id}
-            {...common}
-            cx={s.cx}
-            cy={s.cy}
-            rx={s.rx}
-            ry={s.ry}
-          />
-        );
+        return <ellipse key={id} {...common} cx={s.cx} cy={s.cy} rx={s.rx} ry={s.ry} />;
       }
-      case "line": {
+      case 'line': {
         const s = shape as LineShape;
-        return (
-          <line key={id} {...common} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />
-        );
+        return <line key={id} {...common} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} />;
       }
-      case "text": {
+      case 'text': {
         const s = shape as TextShape;
         // If this text is being edited, render foreignObject instead
         if (editingTextId === id) {
@@ -464,10 +459,10 @@ export function Canvas() {
                 }}
                 onKeyDown={(e) => {
                   e.stopPropagation();
-                  if (e.key === "Enter") {
+                  if (e.key === 'Enter') {
                     e.preventDefault();
                     setEditingTextId(null);
-                  } else if (e.key === "Escape") {
+                  } else if (e.key === 'Escape') {
                     updateShape(id, { content: editingTextOriginal });
                     setEditingTextId(null);
                   }
@@ -475,20 +470,14 @@ export function Canvas() {
                 onBlur={() => {
                   setEditingTextId(null);
                 }}
+                // eslint-disable-next-line jsx-a11y/no-autofocus
                 autoFocus
               />
             </foreignObject>
           );
         }
         return (
-          <text
-            key={id}
-            {...common}
-            x={s.x}
-            y={s.y}
-            fontSize={s.fontSize}
-            fontWeight="normal"
-          >
+          <text key={id} {...common} x={s.x} y={s.y} fontSize={s.fontSize} fontWeight="normal">
             {s.content}
           </text>
         );
@@ -502,48 +491,30 @@ export function Canvas() {
     if (!drawing.isDrawing) return null;
     const { startX, startY, currentX, currentY } = drawing;
     const previewStyle = {
-      fill: "none",
-      stroke: "#000000",
+      fill: 'none',
+      stroke: '#000000',
       strokeWidth: 2,
-      strokeDasharray: "5,5",
+      strokeDasharray: '5,5',
       opacity: 0.5,
     };
 
-    if (activeTool === "rect") {
+    if (activeTool === 'rect') {
       const rx = Math.min(startX, currentX);
       const ry = Math.min(startY, currentY);
       const rw = Math.abs(currentX - startX);
       const rh = Math.abs(currentY - startY);
-      return (
-        <rect
-          data-preview="true"
-          x={rx}
-          y={ry}
-          width={rw}
-          height={rh}
-          {...previewStyle}
-        />
-      );
+      return <rect data-preview="true" x={rx} y={ry} width={rw} height={rh} {...previewStyle} />;
     }
 
-    if (activeTool === "ellipse") {
+    if (activeTool === 'ellipse') {
       const erx = Math.abs(currentX - startX) / 2;
       const ery = Math.abs(currentY - startY) / 2;
       const cx = (startX + currentX) / 2;
       const cy = (startY + currentY) / 2;
-      return (
-        <ellipse
-          data-preview="true"
-          cx={cx}
-          cy={cy}
-          rx={erx}
-          ry={ery}
-          {...previewStyle}
-        />
-      );
+      return <ellipse data-preview="true" cx={cx} cy={cy} rx={erx} ry={ery} {...previewStyle} />;
     }
 
-    if (activeTool === "line") {
+    if (activeTool === 'line') {
       return (
         <line
           data-preview="true"
@@ -564,11 +535,13 @@ export function Canvas() {
       <div className={styles.canvasContainer}>
         <svg
           ref={svgRef}
+          role="img"
+          aria-label="Drawing canvas"
           data-testid="svg-canvas"
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
           preserveAspectRatio="none"
-          width="800"
-          height="600"
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
           className={styles.canvas}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -578,18 +551,14 @@ export function Canvas() {
           <rect
             x="0"
             y="0"
-            width="800"
-            height="600"
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
             fill="white"
             data-background="true"
-            onMouseDown={
-              activeTool === "select" ? handleBackgroundMouseDown : undefined
-            }
+            onMouseDown={activeTool === 'select' ? handleBackgroundMouseDown : undefined}
           />
           {shapes.map(renderShape)}
-          {shapes
-            .filter((s) => selectedIds.includes(s.id))
-            .map(renderSelectionIndicator)}
+          {shapes.filter((s) => selectedIds.includes(s.id)).map(renderSelectionIndicator)}
           {renderPreview()}
         </svg>
         <StatusBar x={mouseCoords.x} y={mouseCoords.y} />

@@ -157,12 +157,12 @@ describe('useDrawingStore', () => {
       expect(useDrawingStore.getState().selectedIds).toEqual([]);
     });
 
-    it('preserves selectedIds for other shapes', () => {
+    it('clears all selection on delete', () => {
       useDrawingStore.getState().addShape(makeRect());
       useDrawingStore.getState().addShape(makeCircle());
       useDrawingStore.getState().setSelectedIds(['circle-1']);
       useDrawingStore.getState().deleteShape('rect-1');
-      expect(useDrawingStore.getState().selectedIds).toEqual(['circle-1']);
+      expect(useDrawingStore.getState().selectedIds).toEqual([]);
     });
 
     it('does nothing for non-existent id', () => {
