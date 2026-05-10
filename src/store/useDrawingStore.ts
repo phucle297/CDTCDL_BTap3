@@ -13,6 +13,7 @@ interface DrawingState {
   setSelectedIds: (ids: string[]) => void;
   clearSelection: () => void;
   setDefaultProperties: (props: Partial<ShapeStyle>) => void;
+  loadShapes: (shapes: Shape[]) => void;
 }
 
 export const useDrawingStore = create<DrawingState>()((set) => ({
@@ -35,5 +36,6 @@ export const useDrawingStore = create<DrawingState>()((set) => ({
   clearSelection: () => set({ selectedIds: [] }),
   setDefaultProperties: (props) =>
     set((state) => ({ defaultProperties: { ...state.defaultProperties, ...props } })),
+  loadShapes: (shapes) => set({ shapes, selectedIds: [] }),
 }));
 
