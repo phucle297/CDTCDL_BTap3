@@ -1,2 +1,2 @@
 // Toolbar components — tool selection and actions
-export {};
+export { Toolbar } from '../Toolbar';

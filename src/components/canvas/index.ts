@@ -1,2 +1,1 @@
-// Canvas components — SVG editor canvas area
-export {};
+export { Canvas } from '../Canvas';

@@ -1,2 +1,2 @@
 // Properties panel components — shape property editing
-export {};
+export { PropertyPanel } from '../PropertyPanel';
